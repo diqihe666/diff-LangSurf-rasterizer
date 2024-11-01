@@ -1,8 +1,8 @@
 # Differential Gaussian Rasterization
 
-Used as the rasterization engine for the paper "3D Gaussian Splatting for Real-Time Rendering of Radiance Fields". If you can make use of it in your own research, please be so kind to cite us.
+Used as the rasterization engine for LMGS. If you can make use of it in your own research, please be so kind to cite us.
 
-<section class="section" id="BibTeX">
+<!-- <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
     <pre><code>@Article{kerbl3Dgaussians,
@@ -16,4 +16,4 @@ Used as the rasterization engine for the paper "3D Gaussian Splatting for Real-T
       url          = {https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/}
 }</code></pre>
   </div>
-</section>
+</section> -->
