@@ -415,7 +415,7 @@ renderCUDA(
 	const uint32_t* __restrict__ n_contrib,
 	const float* __restrict__ dL_dpixels,
 	const float* __restrict__ dL_dpixels_F,
-	const float* __restrict__ dL_dpixels_F_ins,
+	const float* __restrict__ dL_dpixels_F_instance,
 	const float* __restrict__ dL_dout_all_maps,
 	const float* __restrict__ dL_dout_plane_depths,
 	float3* __restrict__ dL_dmean2D,
@@ -467,13 +467,27 @@ renderCUDA(
 
 	float accum_rec[C] = { 0 };
 	float accum_all_map[MAP_N] = { 0 };
+	float accum_rec_F[F] = { 0 };
+	float accum_rec_F_instance[F_ins] = { 0 };
+
 	float dL_dpixel[C];
 	float dL_dout_all_map[MAP_N];
+	float dL_dpixel_F[F] = { 0 };
+	float dL_dpixel_F_instance[F_ins] = { 0 };
 	// float grad_sum = 0;
+
 	if (inside) {
 		for (int i = 0; i < C; i++) {
 			dL_dpixel[i] = dL_dpixels[i * H * W + pix_id];
 			// grad_sum += fabs(dL_dpixel[i]);
+		}
+		if (include_feature) {
+			for (int i = 0; i < F; i++) {
+				dL_dpixel_F[i] = dL_dpixels_F[i * H * W + pix_id];
+			}
+			for (int i = 0; i < F_ins; i++) {
+				dL_dpixel_F_instance[i] = dL_dpixels_F_instance[i * H * W + pix_id];
+			}
 		}
 		if(render_geo) {
 			for (int i = 0; i < MAP_N; i++) {
@@ -496,22 +510,10 @@ renderCUDA(
 
 	float last_alpha = 0;
 	float last_color[C] = { 0 };
-	float accum_rec_F[F] = {0};
-	float dL_dpixel_F[F] = {0};
-	float last_language_feature[F] = {0};
-
-	float accum_rec_F_ins[F_ins] = {0};
-	float dL_dpixel_F_ins[F_ins] = {0};
-	float last_language_feature_instance[F_ins] = {0};
-
-	if (include_feature) {
-		if (inside)
-			for (int i = 0; i < F; i++)
-				dL_dpixel_F[i] = dL_dpixels_F[i * H * W + pix_id];
-			for (int i = 0; i < F_ins; i++)
-				dL_dpixel_F_ins[i] = dL_dpixels_F_ins[i * H * W + pix_id];
-	}
+	float last_language_feature[F] = { 0 };
+	float last_language_feature_instance[F_ins] = { 0 };
 	float last_all_map[MAP_N] = { 0 };
+
 
 	// Gradient of pixel coordinate w.r.t. normalized 
 	// screen-space viewport corrdinates (-1 to 1)
@@ -604,19 +606,21 @@ renderCUDA(
 					// Atomic, since this pixel is just one of potentially
 					// many that were affected by this Gaussian.
 					atomicAdd(&(dL_dlanguage_feature[global_id * F + ch]), dchannel_dcolor * dL_dchannel_F);
-
+				}
+				for (int ch = 0; ch < F_ins; ch++)
+				{
 					// instance
 					const float f_ins = collected_feature_instance[ch * BLOCK_SIZE + j];
 					// Update last color (to be used in the next iteration)
-					accum_rec_F_ins[ch] = last_alpha * last_language_feature_instance[ch] + (1.f - last_alpha) * accum_rec_F_ins[ch];
+					accum_rec_F_instance[ch] = last_alpha * last_language_feature_instance[ch] + (1.f - last_alpha) * accum_rec_F_instance[ch];
 					last_language_feature_instance[ch] = f_ins;
 
-					const float dL_dchannel_F_ins = dL_dpixel_F_ins[ch];
-					dL_dalpha += (f_ins - accum_rec_F_ins[ch]) * dL_dchannel_F_ins;
+					const float dL_dchannel_F_instance = dL_dpixel_F_instance[ch];
+					dL_dalpha += (f_ins - accum_rec_F_instance[ch]) * dL_dchannel_F_instance;
 					// Update the gradients w.r.t. color of the Gaussian. 
 					// Atomic, since this pixel is just one of potentially
 					// many that were affected by this Gaussian.
-					atomicAdd(&(dL_dlanguage_feature_instance[global_id * F_ins + ch]), dchannel_dcolor * dL_dchannel_F_ins);
+					atomicAdd(&(dL_dlanguage_feature_instance[global_id * F_ins + ch]), dchannel_dcolor * dL_dchannel_F_instance);
 				}
 			}
 			if (render_geo) {
@@ -755,7 +759,7 @@ void BACKWARD::render(
 	const uint32_t* n_contrib,
 	const float* dL_dpixels,
 	const float* dL_dpixels_F,
-	const float* dL_dpixels_F_ins,
+	const float* dL_dpixels_F_instance,
 	const float* dL_dout_all_map,
 	const float* dL_dout_plane_depth,
 	float3* dL_dmean2D,
@@ -786,7 +790,7 @@ void BACKWARD::render(
 		n_contrib,
 		dL_dpixels,
 		dL_dpixels_F,
-		dL_dpixels_F_ins,
+		dL_dpixels_F_instance,
 		dL_dout_all_map,
 		dL_dout_plane_depth,
 		dL_dmean2D,

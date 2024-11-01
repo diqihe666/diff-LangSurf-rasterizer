@@ -331,6 +331,7 @@ renderCUDA(
 	float F[CHANNELS_language_feature] = { 0 };
 	float F_ins[CHANNELS_instance_feature] = { 0 };
 	float All_map[ALL_MAP] = { 0 };
+	
 	// Iterate over batches until all done or range is complete
 	for (int i = 0; i < rounds; i++, toDo -= BLOCK_SIZE)
 	{
