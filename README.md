@@ -1,6 +1,6 @@
-# Differential Gaussian Rasterization for LMGS
+# Differential Gaussian Rasterization for LangSurf
 
-Used as the rasterization engine for LMGS which can render rgb, depth, normal, language features and language instance features. If you can make use of it in your own research, please be so kind to cite us.
+Used as the rasterization engine for LangSurf which can render rgb, depth, normal, language features and language instance features. If you can make use of it in your own research, please be so kind to cite us.
 
 <!-- <section class="section" id="BibTeX">
   <div class="container is-max-desktop content">
